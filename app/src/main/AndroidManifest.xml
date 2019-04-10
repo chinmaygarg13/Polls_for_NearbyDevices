@@ -20,8 +20,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:label="@string/app_name" android:name=".start_poll_activity"/>
-        <activity android:label="@string/app_name" android:name=".get_poll_activity"/>
+
+        <activity
+            android:label="@string/app_name"
+            android:name=".start_poll_activity"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:label="@string/app_name"
+            android:name=".get_poll_activity"
+            android:windowSoftInputMode="adjustPan" />
     </application>
 
 </manifest>

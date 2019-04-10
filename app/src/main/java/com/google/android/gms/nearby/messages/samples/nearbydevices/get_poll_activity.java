@@ -10,11 +10,11 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.SwitchCompat;
 import android.text.TextUtils;
 
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -85,15 +85,7 @@ public class get_poll_activity extends AppCompatActivity implements GoogleApiCli
         super.onCreate(savedInstanceState);
         setContentView(R.layout.get_poll);
 
-//        mMessageListener = new MessageListener() {
-//            @Override
-//            public void onFound(final Message message) {
-//                // Called when a new message is found.
-//                String question = DeviceMessage.fromNearbyMessage(message).getMessageBody();
-//                mText.setText(question);
-//                unsubscribe();
-//            }
-//        };
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
         Intent intent = getIntent();
 
@@ -104,25 +96,23 @@ public class get_poll_activity extends AppCompatActivity implements GoogleApiCli
         mText = (TextView) findViewById(R.id.text_q);
         mText.setText(question);
 
-
-//        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-//            subscribe();
-//        }
-//        else
-//            logAndShowSnackbar("yeh kya ho raha hai???");
-
         mButton.setOnClickListener(
                 new View.OnClickListener()
                 {
                     public void onClick(View view)
                     {
                         String message = mEditName.getText().toString() + ":   " + mEditAns.getText().toString();
-                        mPubMessage = DeviceMessage.newNearbyMessage(getUUID(getSharedPreferences(
-                                getApplicationContext().getPackageName(), Context.MODE_PRIVATE)), message);
-                        Log.v("EditText", message);
+                        if(message.matches("")){
+                            logAndShowSnackbar("Please fill all fields before publishing.");
+                        }
+                        else{
+                            mPubMessage = DeviceMessage.newNearbyMessage(getUUID(getSharedPreferences(
+                                    getApplicationContext().getPackageName(), Context.MODE_PRIVATE)), message);
+                            Log.v("EditText", message);
 
-                        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()){
-                            publish();
+                            if (mGoogleApiClient != null && mGoogleApiClient.isConnected()){
+                                publish();
+                            }
                         }
                     }
                 });
@@ -131,47 +121,6 @@ public class get_poll_activity extends AppCompatActivity implements GoogleApiCli
 
     }
 
-//    @Override
-//    public void onStart() {
-//
-//        super.onStart();
-//
-//        mMessageListener = new MessageListener() {
-//            @Override
-//            public void onFound(final Message message) {
-//                // Called when a new message is found.
-//                String question = DeviceMessage.fromNearbyMessage(message).getMessageBody();
-//                mText.setText(question);
-//                unsubscribe();
-//            }
-//        };
-//
-//        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-//            subscribe();
-//        }
-//        else
-//            logAndShowSnackbar("yeh kya ho raha hai???");
-//    }
-//    @Override
-//    public void onPause() {
-//        super.onPause();
-//
-//        mMessageListener = new MessageListener() {
-//            @Override
-//            public void onFound(final Message message) {
-//                // Called when a new message is found.
-//                String question = DeviceMessage.fromNearbyMessage(message).getMessageBody();
-//                mText.setText(question);
-//                unsubscribe();
-//            }
-//        };
-//
-//        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-//            subscribe();
-//        } else
-//            logAndShowSnackbar("yeh kya ho raha hai???");
-//
-//    }
 
     public void buildGoogleApiClient() {
         if (mGoogleApiClient != null) {

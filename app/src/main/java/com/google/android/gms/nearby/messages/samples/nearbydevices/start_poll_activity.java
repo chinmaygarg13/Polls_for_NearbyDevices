@@ -6,19 +6,24 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.SwitchCompat;
 import android.text.TextUtils;
 
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -39,6 +44,7 @@ import com.google.android.gms.nearby.messages.SubscribeOptions;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.Map;
 import java.util.UUID;
 
 public class start_poll_activity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
@@ -46,10 +52,13 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
 
     private FloatingActionButton mButton;
     private FloatingActionButton mStopButton;
+    private FloatingActionButton mStartSubButton;
     private EditText mEdit;
-    private TextView mText;
 
-    private static final int TTL_IN_SECONDS = 1 * 60; // Three minutes.
+    private LinearLayout mLayout;
+    private Button mAddButton;
+
+    private static final int TTL_IN_SECONDS = 3 * 60; // Three minutes.
 
     private static final Strategy PUB_SUB_STRATEGY = new Strategy.Builder()
             .setTtlSeconds(TTL_IN_SECONDS).build();
@@ -81,6 +90,8 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
 
     private ArrayAdapter<String> mAnswersArrayAdapter;
 
+    public int num = 2;     /**Default number of options*/
+
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -88,29 +99,56 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.start_poll);
 
+        /**To hide the soft keyboard upon getting into this activity, as it has an EditText */
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+
+        /**findViewbyId */
         mButton = (FloatingActionButton) findViewById(R.id.share_poll_button);
         mEdit   = (EditText)findViewById(R.id.edit_qa);
-        mText = (TextView) findViewById(R.id.textView);
         mStopButton = (FloatingActionButton) findViewById(R.id.stop_sub_button);
+        mStartSubButton = (FloatingActionButton) findViewById(R.id.stop_pub_start_sub_button);
 
+        final EditText mOpt1 = findViewById(R.id.edit_option1);
+        final EditText mOpt2 = findViewById(R.id.edit_option2);
+
+        mAddButton = (Button) findViewById(R.id.add_button);
+
+        /**Listeners */
         mButton.setOnClickListener(
                 new View.OnClickListener()
                 {
                     public void onClick(View view)
                     {
-                        String message = mEdit.getText().toString();
-                        mPubMessage = DeviceMessage.newNearbyMessage(getUUID(getSharedPreferences(
-                                getApplicationContext().getPackageName(), Context.MODE_PRIVATE)), message);
-                        Log.v("EditText", mEdit.getText().toString());
+                        String question = mEdit.getText().toString();
+                        String opt1 = mOpt1.getText().toString();
+                        String opt2 = mOpt2.getText().toString();
 
-                        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()){
-                            publish();
-                            view.setVisibility(View.GONE);
-                            mText.setVisibility(View.GONE);
+                        if(question.matches("")){
+                            logAndShowSnackbar("No Question entered. Please enter your question first.");
                         }
+                        else if(opt1.matches("") || opt2.matches("")){
+                            logAndShowSnackbar("Enter atleast the first 2 options.");
+                        }
+                        else{
+                            String message = question + "$$" + opt1 + "$$" + opt2;
+                            Log.v("_log",message);
 
-                        //ViewGroup parentView = (ViewGroup) view.getParent();
-                        //parentView.removeView(view);
+                            for(int i = 3; i <= num; i++){
+                                EditText ed = findViewById(i);
+                                message += "$$" + ed.getText().toString();
+                                Log.v("_log",message);
+                            }
+
+                            mPubMessage = DeviceMessage.newNearbyMessage(getUUID(getSharedPreferences(
+                                getApplicationContext().getPackageName(), Context.MODE_PRIVATE)), message);
+                            Log.v("_log", message);
+
+                            if (mGoogleApiClient != null && mGoogleApiClient.isConnected()){
+                                publish();
+                                view.setVisibility(View.GONE);
+                                mStartSubButton.show();
+                            }
+                        }
                     }
                 });
 
@@ -125,6 +163,28 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
                     }
                 });
 
+        mStartSubButton.setOnClickListener(
+                new View.OnClickListener()
+                {
+                    public void onClick(View view)
+                    {
+                        unpublish();
+                        subscribe();
+                        view.setVisibility(View.GONE);
+                        logAndShowSnackbar("Publishing Off. Now Receiving Answers.");
+                    }
+                });
+
+
+        mAddButton.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        addOption();
+                    }
+                }
+        );
+
         mMessageListener = new MessageListener() {
             @Override
             public void onFound(final Message message) {
@@ -134,6 +194,7 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
             }
         };
 
+        /**Adapting ListView for the incoming answers */
         final List<String> answersArrayList = new ArrayList<>();
         mAnswersArrayAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
@@ -147,6 +208,24 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
         buildGoogleApiClient();
     }
 
+
+    public void addOption(){
+        mLayout = (LinearLayout) findViewById(R.id.options_container);
+        EditText editTextView = new EditText(this);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        params.setMargins(dpToPx(20),0,dpToPx(10),0);
+        editTextView.setLayoutParams(params);
+        num++;
+        editTextView.setId(num);
+        editTextView.setText(num + ". ");
+        mLayout.addView(editTextView);
+    }
+
+    public int dpToPx(int dp) {
+        DisplayMetrics displayMetrics = this.getResources().getDisplayMetrics();
+        return Math.round(dp * (displayMetrics.xdpi / DisplayMetrics.DENSITY_DEFAULT));
+    }
+
     public void buildGoogleApiClient() {
         if (mGoogleApiClient != null) {
             return;
@@ -157,6 +236,7 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
                 .enableAutoManage(this, this)
                 .build();
     }
+
 
     private void publish() {
         Log.i("_log", "Publishing");
@@ -181,7 +261,7 @@ logAndShowSnackbar("No longer publishing");                            }
                     @Override
                     public void onResult(@NonNull Status status) {
                         if (status.isSuccess()) {
-                            logAndShowSnackbar("Published successfully. Automatic unpublishing after 3 min.");
+                            logAndShowSnackbar("Published successfully. Automatic unpublishing after 3 min. Press Button for Instant Unpublishing.");
                         } else {
                             logAndShowSnackbar("Could not publish, status = " + status);
                         }
@@ -233,6 +313,7 @@ logAndShowSnackbar("No longer publishing");                            }
         Nearby.Messages.unsubscribe(mGoogleApiClient, mMessageListener);
     }
 
+
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.i("_log", "GoogleApiClient connected");
@@ -249,6 +330,7 @@ logAndShowSnackbar("No longer publishing");                            }
         logAndShowSnackbar("Exception while connecting to Google Play services: " +
                 connectionResult.getErrorMessage());
     }
+
 
     private void logAndShowSnackbar(final String text) {
         Log.w("_log", text);
