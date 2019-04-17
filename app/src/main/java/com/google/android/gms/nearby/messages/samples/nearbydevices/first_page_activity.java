@@ -1,21 +1,15 @@
 package com.google.android.gms.nearby.messages.samples.nearbydevices;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
 
 import android.util.Log;
 import android.view.View;
-import android.widget.CompoundButton;
-import android.widget.ListView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -24,23 +18,14 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.nearby.Nearby;
 import com.google.android.gms.nearby.messages.Message;
 import com.google.android.gms.nearby.messages.MessageListener;
-import com.google.android.gms.nearby.messages.Messages;
-import com.google.android.gms.nearby.messages.PublishCallback;
-import com.google.android.gms.nearby.messages.PublishOptions;
 import com.google.android.gms.nearby.messages.Strategy;
 import com.google.android.gms.nearby.messages.SubscribeCallback;
 import com.google.android.gms.nearby.messages.SubscribeOptions;
 
-import java.util.ArrayList;
-import java.util.List;
 
-import java.util.UUID;
 
 public class first_page_activity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener{
-
-    private FloatingActionButton start_button;
-    private FloatingActionButton participate_button;
 
     public GoogleApiClient mGoogleApiClient;
 
@@ -59,8 +44,8 @@ public class first_page_activity extends AppCompatActivity implements GoogleApiC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.first_page);
 
-        start_button = (FloatingActionButton) findViewById(R.id.start_button);
-        participate_button = (FloatingActionButton) findViewById(R.id.participate_button);
+        FloatingActionButton start_button = findViewById(R.id.start_button);
+        FloatingActionButton participate_button = findViewById(R.id.participate_button);
 
         participate_button.setOnClickListener(mParticipateListener);
         start_button.setOnClickListener(mStartListener);
@@ -94,9 +79,7 @@ public class first_page_activity extends AppCompatActivity implements GoogleApiC
             subscribe();
             View container = findViewById(R.id.first_page_container);
             Snackbar.make(container,"Subscribing...   Please WAIT, listening for messages.", Snackbar.LENGTH_INDEFINITE).show();
-//            Intent myIntent = new Intent(first_page_activity.this, get_poll_activity.class);
-//            myIntent.putExtra("Question", question);
-//            first_page_activity.this.startActivity(myIntent);
+            //we go to the get_poll_activity when the message is received.
         }
     };
 

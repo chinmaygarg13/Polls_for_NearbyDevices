@@ -1,7 +1,6 @@
 package com.google.android.gms.nearby.messages.samples.nearbydevices;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -9,23 +8,21 @@ import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.ViewCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.ViewGroup.LayoutParams;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -34,7 +31,6 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.nearby.Nearby;
 import com.google.android.gms.nearby.messages.Message;
 import com.google.android.gms.nearby.messages.MessageListener;
-import com.google.android.gms.nearby.messages.Messages;
 import com.google.android.gms.nearby.messages.PublishCallback;
 import com.google.android.gms.nearby.messages.PublishOptions;
 import com.google.android.gms.nearby.messages.Strategy;
@@ -42,10 +38,12 @@ import com.google.android.gms.nearby.messages.SubscribeCallback;
 import com.google.android.gms.nearby.messages.SubscribeOptions;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
-import java.util.Map;
 import java.util.UUID;
+
+import static java.lang.Character.isDigit;
 
 public class start_poll_activity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener{
@@ -55,10 +53,7 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
     private FloatingActionButton mStartSubButton;
     private EditText mEdit;
 
-    private LinearLayout mLayout;
-    private Button mAddButton;
-
-    private static final int TTL_IN_SECONDS = 3 * 60; // Three minutes.
+    private static final int TTL_IN_SECONDS = 10 * 60; // Ten minutes.
 
     private static final Strategy PUB_SUB_STRATEGY = new Strategy.Builder()
             .setTtlSeconds(TTL_IN_SECONDS).build();
@@ -88,9 +83,10 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
 
     public GoogleApiClient mGoogleApiClient;
 
-    private ArrayAdapter<String> mAnswersArrayAdapter;
+    private ArrayAdapter mAnswersArrayAdapter;
 
     public int num = 2;     /**Default number of options*/
+    private int height = 10;
 
 
     @Override
@@ -99,26 +95,32 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
         super.onCreate(savedInstanceState);
         setContentView(R.layout.start_poll);
 
-        /**To hide the soft keyboard upon getting into this activity, as it has an EditText */
+        //To hide the soft keyboard upon getting into this activity, as it has an EditText
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
-        /**findViewbyId */
-        mButton = (FloatingActionButton) findViewById(R.id.share_poll_button);
-        mEdit   = (EditText)findViewById(R.id.edit_qa);
-        mStopButton = (FloatingActionButton) findViewById(R.id.stop_sub_button);
-        mStartSubButton = (FloatingActionButton) findViewById(R.id.stop_pub_start_sub_button);
-
+        //findViewbyId
+        mButton = findViewById(R.id.share_poll_button);
+        mEdit   = findViewById(R.id.edit_qa);
+        mStopButton = findViewById(R.id.stop_sub_button);
+        mStartSubButton = findViewById(R.id.stop_pub_start_sub_button);
+        final ListView answersListView = findViewById(R.id.ans_list);
         final EditText mOpt1 = findViewById(R.id.edit_option1);
         final EditText mOpt2 = findViewById(R.id.edit_option2);
+        Button mAddButton = findViewById(R.id.add_button);
 
-        mAddButton = (Button) findViewById(R.id.add_button);
-
-        /**Listeners */
+        ViewCompat.setNestedScrollingEnabled(answersListView, true);
+        //Listeners
         mButton.setOnClickListener(
                 new View.OnClickListener()
                 {
                     public void onClick(View view)
                     {
+                        ConstraintLayout mainLayout = findViewById(R.id.start_poll_container);
+                        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                        if (imm != null) {
+                            imm.hideSoftInputFromWindow(mainLayout.getWindowToken(), 0);
+                        }
+
                         String question = mEdit.getText().toString();
                         String opt1 = mOpt1.getText().toString();
                         String opt2 = mOpt2.getText().toString();
@@ -126,8 +128,8 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
                         if(question.matches("")){
                             logAndShowSnackbar("No Question entered. Please enter your question first.");
                         }
-                        else if(opt1.matches("") || opt2.matches("")){
-                            logAndShowSnackbar("Enter atleast the first 2 options.");
+                        else if(opt1.matches("1. ") || opt2.matches("2. ")){
+                            logAndShowSnackbar("Enter at least the first 2 options.");
                         }
                         else{
                             String message = question + "$$" + opt1 + "$$" + opt2;
@@ -145,8 +147,6 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
 
                             if (mGoogleApiClient != null && mGoogleApiClient.isConnected()){
                                 publish();
-                                view.setVisibility(View.GONE);
-                                mStartSubButton.show();
                             }
                         }
                     }
@@ -170,7 +170,7 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
                     {
                         unpublish();
                         subscribe();
-                        view.setVisibility(View.GONE);
+                        //view.setVisibility(View.GONE);
                         logAndShowSnackbar("Publishing Off. Now Receiving Answers.");
                     }
                 });
@@ -185,34 +185,64 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
                 }
         );
 
+        /**
+         * It is very important that every option that is sent to the receiver must start
+         * with its option number.
+         * Otherwise app may crash.
+         */
+
+        final Comparator<String> ALPHABETICAL_ORDER1 = new Comparator<String>() {
+            public int compare(String object1, String object2) {
+                if(isDigit(object1.charAt(0)) && isDigit(object2.charAt(0))){
+                    int i1 = Character.getNumericValue(object1.charAt(0));
+                    int i2 = Character.getNumericValue(object2.charAt(0));
+                    if(isDigit(object1.charAt(1))){
+                        i1 = i1*10 + Character.getNumericValue(object1.charAt(1));
+                    }
+                    if(isDigit(object2.charAt(1))){
+                        i2 = i2*10 + Character.getNumericValue(object2.charAt(1));
+                    }
+                    return Integer.compare(i1,i2);
+                }
+                else{
+                    return String.CASE_INSENSITIVE_ORDER.compare(object1, object2);
+                }
+            }
+        };
+
         mMessageListener = new MessageListener() {
             @Override
             public void onFound(final Message message) {
                 // Called when a new message is found.
+                //TODO: Add Roll number or name of the sender
                 mAnswersArrayAdapter.add(
                         DeviceMessage.fromNearbyMessage(message).getMessageBody());
+                mAnswersArrayAdapter.sort(ALPHABETICAL_ORDER1);
+                height += 100;
+                ConstraintLayout.LayoutParams mParam = new ConstraintLayout.LayoutParams(
+                        ConstraintLayout.LayoutParams.MATCH_PARENT, height);
+                answersListView.setLayoutParams(mParam);
             }
         };
 
-        /**Adapting ListView for the incoming answers */
+        //Adapting ListView for the incoming answers
         final List<String> answersArrayList = new ArrayList<>();
         mAnswersArrayAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1,
                 answersArrayList);
-        final ListView answersListView = (ListView) findViewById(
-                R.id.ans_list);
-        if (answersListView != null) {
-            answersListView.setAdapter(mAnswersArrayAdapter);
-        }
+        //TODO: Arrange according to the options and show final analysis
+        mAnswersArrayAdapter.setNotifyOnChange(true);
+        answersListView.setAdapter(mAnswersArrayAdapter);
 
         buildGoogleApiClient();
     }
 
 
     public void addOption(){
-        mLayout = (LinearLayout) findViewById(R.id.options_container);
+        LinearLayout mLayout = findViewById(R.id.options_container);
         EditText editTextView = new EditText(this);
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT,
+                LayoutParams.WRAP_CONTENT);
         params.setMargins(dpToPx(20),0,dpToPx(10),0);
         editTextView.setLayoutParams(params);
         num++;
@@ -251,7 +281,8 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-logAndShowSnackbar("No longer publishing");                            }
+                                logAndShowSnackbar("No longer publishing");
+                            }
                         });
                     }
                 }).build();
@@ -261,7 +292,10 @@ logAndShowSnackbar("No longer publishing");                            }
                     @Override
                     public void onResult(@NonNull Status status) {
                         if (status.isSuccess()) {
-                            logAndShowSnackbar("Published successfully. Automatic unpublishing after 3 min. Press Button for Instant Unpublishing.");
+                            mButton.hide();
+                            mStartSubButton.show();
+                            logAndShowSnackbar("Published successfully. " +
+                                    "Automatic unpublishing after 10 min. Press Button for Instant Unpublishing.");
                         } else {
                             logAndShowSnackbar("Could not publish, status = " + status);
                         }
@@ -272,7 +306,6 @@ logAndShowSnackbar("No longer publishing");                            }
     private void subscribe() {
         Log.i("_log", "Subscribing");
         mAnswersArrayAdapter.clear();
-        mStopButton.show();
         SubscribeOptions options = new SubscribeOptions.Builder()
                 .setStrategy(PUB_SUB_STRATEGY)
                 .setCallback(new SubscribeCallback() {
@@ -294,6 +327,8 @@ logAndShowSnackbar("No longer publishing");                            }
                     @Override
                     public void onResult(@NonNull Status status) {
                         if (status.isSuccess()) {
+                            mStartSubButton.hide();
+                            mStopButton.show();
                             logAndShowSnackbar("No longer Publishing. Subscription started");
                         } else {
                             logAndShowSnackbar("Could not subscribe, status = " + status);

@@ -9,40 +9,46 @@
     android:id="@+id/get_poll_container"
     tools:context="com.google.android.gms.nearby.messages.samples.nearbydevices.get_poll_activity">
 
-    <TextView
-        android:id="@+id/text_q"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_marginTop="10dp"
-        android:layout_marginStart="5dp"
-        android:layout_marginEnd="5dp"
-        android:scrollbars="vertical"
-        android:text="Here will come the question and options received from the sender or publisher." />
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:layout_margin="15dp"
+        android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/edit_name"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/text_q"
-        app:layout_constraintLeft_toLeftOf="@+id/text_q"
-        android:layout_marginTop="15dp"
-        android:ems="10"
-        android:hint="Your name or roll number"
-        android:inputType="textPersonName" />
+        <android.support.constraint.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-    <EditText
-        android:id="@+id/edit_ans"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/edit_name"
-        app:layout_constraintLeft_toLeftOf="@+id/edit_name"
-        android:layout_marginTop="10dp"
-        android:ems="10"
-        android:hint="Your answer."
-        android:inputType="textPersonName" />
+            <TextView
+                android:id="@+id/text_q"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:layout_marginBottom="15dp"
+                android:text="Here will come the question and options received from the sender or publisher." />
+
+            <RadioGroup
+                android:id="@+id/radio_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/text_q"
+                app:layout_constraintLeft_toLeftOf="parent"
+                android:orientation="vertical"/>
+
+            <View
+                android:id="@+id/divider"
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:background="@color/common_google_signin_btn_text_light_disabled"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/radio_group" />
+
+        </android.support.constraint.ConstraintLayout>
+
+    </ScrollView>
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/submit_button"

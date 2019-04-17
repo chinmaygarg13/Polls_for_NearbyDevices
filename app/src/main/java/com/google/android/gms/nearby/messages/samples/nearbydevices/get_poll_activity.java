@@ -8,17 +8,15 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ListView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -27,28 +25,19 @@ import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.nearby.Nearby;
 import com.google.android.gms.nearby.messages.Message;
-import com.google.android.gms.nearby.messages.MessageListener;
-import com.google.android.gms.nearby.messages.Messages;
 import com.google.android.gms.nearby.messages.PublishCallback;
 import com.google.android.gms.nearby.messages.PublishOptions;
 import com.google.android.gms.nearby.messages.Strategy;
-import com.google.android.gms.nearby.messages.SubscribeCallback;
-import com.google.android.gms.nearby.messages.SubscribeOptions;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import java.util.Objects;
 import java.util.UUID;
+
 public class get_poll_activity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener{
 
-    private FloatingActionButton mButton;
-    private EditText mEditName;
-    private EditText mEditAns;
-    private TextView mText;
+    private RadioGroup mRadioGroup;
+    private RadioButton mRadioButton;
 
-    private static final int TTL_IN_SECONDS = 3 * 60; // Three minutes.
+    private static final int TTL_IN_SECONDS = 10 * 60; // Ten minutes.
 
     private static final Strategy PUB_SUB_STRATEGY = new Strategy.Builder()
             .setTtlSeconds(TTL_IN_SECONDS).build();
@@ -74,8 +63,6 @@ public class get_poll_activity extends AppCompatActivity implements GoogleApiCli
      */
     private Message mPubMessage;
 
-    private MessageListener mMessageListener;
-
     public GoogleApiClient mGoogleApiClient;
 
 
@@ -90,25 +77,42 @@ public class get_poll_activity extends AppCompatActivity implements GoogleApiCli
         Intent intent = getIntent();
 
         String question = intent.getStringExtra("Question");
-        mButton = (FloatingActionButton) findViewById(R.id.submit_button);
-        mEditName = (EditText)findViewById(R.id.edit_name);
-        mEditAns = (EditText) findViewById(R.id.edit_ans);
-        mText = (TextView) findViewById(R.id.text_q);
+
+        String[] qa_array = question.split("\\$\\$");
+        question = qa_array[0];
+
+
+        FloatingActionButton mButton = findViewById(R.id.submit_button);
+        TextView mText = findViewById(R.id.text_q);
+        mRadioGroup = findViewById(R.id.radio_group);
+
         mText.setText(question);
+
+        for(int i = 1; i < qa_array.length; i++){
+            RadioButton rbtn = new RadioButton(this);
+            rbtn.setId(View.generateViewId());
+            rbtn.setText(qa_array[i]);
+            RadioGroup.LayoutParams params = new RadioGroup.LayoutParams(RadioGroup.LayoutParams.WRAP_CONTENT,
+                    RadioGroup.LayoutParams.WRAP_CONTENT);
+            mRadioGroup.addView(rbtn, params);
+        }
 
         mButton.setOnClickListener(
                 new View.OnClickListener()
                 {
                     public void onClick(View view)
                     {
-                        String message = mEditName.getText().toString() + ":   " + mEditAns.getText().toString();
-                        if(message.matches("")){
-                            logAndShowSnackbar("Please fill all fields before publishing.");
+                        //String message = mEditName.getText().toString() + ":   " + mEditAns.getText().toString();
+                        int selectId = mRadioGroup.getCheckedRadioButtonId();
+                        if(selectId == -1){
+                            logAndShowSnackbar("Please select an option before publishing.");
                         }
                         else{
+                            mRadioButton = findViewById(selectId);
+                            String message = mRadioButton.getText().toString();
                             mPubMessage = DeviceMessage.newNearbyMessage(getUUID(getSharedPreferences(
                                     getApplicationContext().getPackageName(), Context.MODE_PRIVATE)), message);
-                            Log.v("EditText", message);
+                            Log.v("_log", message);
 
                             if (mGoogleApiClient != null && mGoogleApiClient.isConnected()){
                                 publish();
@@ -163,54 +167,9 @@ public class get_poll_activity extends AppCompatActivity implements GoogleApiCli
                 });
     }
 
-    private void unpublish() {
-        Log.i("_log", "Unpublishing.");
-        Nearby.Messages.unpublish(mGoogleApiClient, mPubMessage);
-    }
-
-    private void subscribe() {
-        Log.i("_log", "Subscribing");
-        mText.clearComposingText();
-        SubscribeOptions options = new SubscribeOptions.Builder()
-                .setStrategy(PUB_SUB_STRATEGY)
-                .setCallback(new SubscribeCallback() {
-                    @Override
-                    public void onExpired() {
-                        super.onExpired();
-                        Log.i("_log", "No longer subscribing");
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                logAndShowSnackbar("No longer subscribing");
-                            }
-                        });
-                    }
-                }).build();
-
-        Nearby.Messages.subscribe(mGoogleApiClient, mMessageListener, options)
-                .setResultCallback(new ResultCallback<Status>() {
-                    @Override
-                    public void onResult(@NonNull Status status) {
-                        if (status.isSuccess()) {
-                            Log.i("_log", "Subscribed successfully.");
-                            logAndShowSnackbar("Subscription started");
-                        } else {
-                            logAndShowSnackbar("Could not subscribe, status = " + status);
-                        }
-                    }
-                });
-    }
-
-    private void unsubscribe() {
-        Log.i("_log", "Unsubscribing.");
-        logAndShowSnackbar("unsubscribed");
-        Nearby.Messages.unsubscribe(mGoogleApiClient, mMessageListener);
-    }
-
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         Log.i("_log", "GoogleApiClient connected");
-
     }
 
     @Override
