@@ -24,8 +24,8 @@ import com.google.android.gms.nearby.messages.SubscribeOptions;
 
 
 
-public class first_page_activity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener{
+public class first_page_activity extends AppCompatActivity
+        implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener{
 
     public GoogleApiClient mGoogleApiClient;
 
@@ -47,15 +47,38 @@ public class first_page_activity extends AppCompatActivity implements GoogleApiC
         FloatingActionButton start_button = findViewById(R.id.start_button);
         FloatingActionButton participate_button = findViewById(R.id.participate_button);
 
-        participate_button.setOnClickListener(mParticipateListener);
-        start_button.setOnClickListener(mStartListener);
+        participate_button.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        subscribe();
+                        View container = findViewById(R.id.first_page_container);
+                        Snackbar.make(
+                                container,
+                                "Subscribing...   Please WAIT, listening for messages.",
+                                Snackbar.LENGTH_INDEFINITE).show();
+                        //we go to the get_poll_activity when the message is received.
+                    }
+                }
+        );
+        start_button.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Intent myIntent = new Intent(first_page_activity.this,
+                                start_poll_activity.class);
+                        first_page_activity.this.startActivity(myIntent);
+                    }
+                }
+        );
 
         mMessageListener = new MessageListener() {
             @Override
             public void onFound(final Message message) {
                 // Called when a new message is found.
                 question = DeviceMessage.fromNearbyMessage(message).getMessageBody();
-                Intent myIntent = new Intent(first_page_activity.this, get_poll_activity.class);
+                Intent myIntent = new Intent(first_page_activity.this,
+                        get_poll_activity.class);
                 myIntent.putExtra("Question", "" + question);
                 first_page_activity.this.startActivity(myIntent);
                 unsubscribe();
@@ -64,24 +87,6 @@ public class first_page_activity extends AppCompatActivity implements GoogleApiC
 
         buildGoogleApiClient();
     }
-
-    private View.OnClickListener mStartListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            Intent myIntent = new Intent(first_page_activity.this, start_poll_activity.class);
-            first_page_activity.this.startActivity(myIntent);
-        }
-    };
-
-    private View.OnClickListener mParticipateListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            subscribe();
-            View container = findViewById(R.id.first_page_container);
-            Snackbar.make(container,"Subscribing...   Please WAIT, listening for messages.", Snackbar.LENGTH_INDEFINITE).show();
-            //we go to the get_poll_activity when the message is received.
-        }
-    };
 
     private void subscribe() {
         Log.i("_log", "Subscribing");

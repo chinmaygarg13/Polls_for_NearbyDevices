@@ -86,7 +86,7 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
     private ArrayAdapter mAnswersArrayAdapter;
 
     public int num = 2;     /**Default number of options*/
-    private int height = 10;
+    private int height = 30;
 
 
     @Override
@@ -218,7 +218,7 @@ public class start_poll_activity extends AppCompatActivity implements GoogleApiC
                 mAnswersArrayAdapter.add(
                         DeviceMessage.fromNearbyMessage(message).getMessageBody());
                 mAnswersArrayAdapter.sort(ALPHABETICAL_ORDER1);
-                height += 100;
+                height += 130;
                 ConstraintLayout.LayoutParams mParam = new ConstraintLayout.LayoutParams(
                         ConstraintLayout.LayoutParams.MATCH_PARENT, height);
                 answersListView.setLayoutParams(mParam);

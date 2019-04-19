@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.google.android.gms.nearby.messages.samples.nearbydevices.first_page_activity"
+    tools:context="com.google.android.gms.nearby.messages.samples.nearbydevices.connections_activity"
     android:id="@+id/first_page_container">
 
     <android.support.design.widget.FloatingActionButton
