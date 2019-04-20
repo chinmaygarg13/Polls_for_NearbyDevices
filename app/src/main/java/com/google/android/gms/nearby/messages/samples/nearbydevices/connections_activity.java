@@ -16,6 +16,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.Status;
@@ -150,28 +151,45 @@ public class connections_activity extends AppCompatActivity{
                 }
             };
 
+    boolean QUIZ = false;
+
     /** Called when our Activity is first created. */
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.first_page);
 
-        FloatingActionButton start_button = findViewById(R.id.start_button);
-        FloatingActionButton participate_button = findViewById(R.id.participate_button);
+        final FloatingActionButton start_button = findViewById(R.id.start_button);
+        final FloatingActionButton participate_button = findViewById(R.id.participate_button);
+        final FloatingActionButton start_quiz_button = findViewById(R.id.start_quiz_button);
+        final FloatingActionButton participate_quiz_button = findViewById(R.id.participate_quiz_button);
+        final TextView mText = findViewById(R.id.disc_text);
+        final View divider = findViewById(R.id.mid_divider);
+        final TextView t1 = findViewById(R.id.textView2);
+        final TextView t2 = findViewById(R.id.textView3);
+        final TextView t3 = findViewById(R.id.textView2_quiz);
+        final TextView t4 = findViewById(R.id.textView3_quiz);
 
         participate_button.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+                        QUIZ = false;
                         startDiscovering();
-                        View container = findViewById(R.id.first_page_container);
-                        Snackbar.make(
-                                container,
-                                "Subscribing...   Please WAIT, listening for messages.",
-                                Snackbar.LENGTH_INDEFINITE).show();
+                        mText.setVisibility(View.VISIBLE);
+                        start_button.hide();
+                        participate_button.hide();
+                        start_quiz_button.hide();
+                        participate_quiz_button.hide();
+                        divider.setVisibility(View.GONE);
+                        t1.setVisibility(View.GONE);
+                        t2.setVisibility(View.GONE);
+                        t3.setVisibility(View.GONE);
+                        t4.setVisibility(View.GONE);
                     }
                 }
         );
+
         start_button.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
@@ -182,6 +200,38 @@ public class connections_activity extends AppCompatActivity{
                     }
                 }
         );
+
+        start_quiz_button.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Intent myIntent = new Intent(connections_activity.this,
+                                start_quiz_activity.class);
+                        connections_activity.this.startActivity(myIntent);
+                    }
+                }
+        );
+
+        participate_quiz_button.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        QUIZ = true;
+                        startDiscovering_quiz();
+                        mText.setVisibility(View.VISIBLE);
+                        start_button.hide();
+                        participate_button.hide();
+                        start_quiz_button.hide();
+                        participate_quiz_button.hide();
+                        divider.setVisibility(View.GONE);
+                        t1.setVisibility(View.GONE);
+                        t2.setVisibility(View.GONE);
+                        t3.setVisibility(View.GONE);
+                        t4.setVisibility(View.GONE);
+                    }
+                }
+        );
+
 
         mConnectionsClient = Nearby.getConnectionsClient(this);
     }
@@ -219,61 +269,6 @@ public class connections_activity extends AppCompatActivity{
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
-
-    /**
-     * Sets the device to advertising mode. It will broadcast to other devices in discovery mode.
-     * Either {@link #onAdvertisingStarted()} or {@link #onAdvertisingFailed()} will be called once
-     * we've found out if we successfully entered this mode.
-     */
-    protected void startAdvertising() {
-        mIsAdvertising = true;
-        final String localEndpointName = getName();
-
-        AdvertisingOptions.Builder advertisingOptions = new AdvertisingOptions.Builder();
-        advertisingOptions.setStrategy(getStrategy());
-
-        mConnectionsClient
-                .startAdvertising(
-                        localEndpointName,
-                        getServiceId(),
-                        mConnectionLifecycleCallback,
-                        advertisingOptions.build())
-                .addOnSuccessListener(
-                        new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void unusedResult) {
-                                logV("Now advertising endpoint " + localEndpointName);
-                                onAdvertisingStarted();
-                            }
-                        })
-                .addOnFailureListener(
-                        new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                mIsAdvertising = false;
-                                logW("startAdvertising() failed.", e);
-                                onAdvertisingFailed();
-                            }
-                        });
-    }
-
-    /** Stops advertising. */
-    protected void stopAdvertising() {
-        if(isAdvertising())
-            mConnectionsClient.stopAdvertising();
-        mIsAdvertising = false;
-    }
-
-    /** Returns {@code true} if currently advertising. */
-    protected boolean isAdvertising() {
-        return mIsAdvertising;
-    }
-
-    /** Called when advertising successfully starts. Override this method to act on the event. */
-    protected void onAdvertisingStarted() {}
-
-    /** Called when advertising fails to start. Override this method to act on the event. */
-    protected void onAdvertisingFailed() {}
 
     /**
      * Called when a pending connection with a remote endpoint is created. Use {@link ConnectionInfo}
@@ -317,7 +312,7 @@ public class connections_activity extends AppCompatActivity{
      * out if we successfully entered this mode.
      */
     protected void startDiscovering() {
-        mConnectionsClient.stopDiscovery();
+        stopDiscovering();
         mIsDiscovering = true;
         mDiscoveredEndpoints.clear();
         DiscoveryOptions.Builder discoveryOptions = new DiscoveryOptions.Builder();
@@ -334,6 +329,54 @@ public class connections_activity extends AppCompatActivity{
                                                 endpointId, info.getServiceId(), info.getEndpointName()));
 
                                 if (getServiceId().equals(info.getServiceId())) {
+                                    Endpoint endpoint = new Endpoint(endpointId, info.getEndpointName());
+                                    mDiscoveredEndpoints.put(endpointId, endpoint);
+                                    onEndpointDiscovered(endpoint);
+                                }
+                            }
+
+                            @Override
+                            public void onEndpointLost(String endpointId) {
+                                logD(String.format("onEndpointLost(endpointId=%s)", endpointId));
+                            }
+                        },
+                        discoveryOptions.build())
+                .addOnSuccessListener(
+                        new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void unusedResult) {
+                                onDiscoveryStarted();
+                            }
+                        })
+                .addOnFailureListener(
+                        new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                mIsDiscovering = false;
+                                logW("startDiscovering() failed.", e);
+                                onDiscoveryFailed();
+                            }
+                        });
+    }
+
+    protected void startDiscovering_quiz() {
+        stopDiscovering();
+        mIsDiscovering = true;
+        mDiscoveredEndpoints.clear();
+        DiscoveryOptions.Builder discoveryOptions = new DiscoveryOptions.Builder();
+        discoveryOptions.setStrategy(getStrategy());
+        mConnectionsClient
+                .startDiscovery(
+                        getServiceId_quiz(),
+                        new EndpointDiscoveryCallback() {
+                            @Override
+                            public void onEndpointFound(String endpointId, DiscoveredEndpointInfo info) {
+                                logD(
+                                        String.format(
+                                                "onEndpointFound(endpointId=%s, serviceId=%s, endpointName=%s)",
+                                                endpointId, info.getServiceId(), info.getEndpointName()));
+
+                                if (getServiceId_quiz().equals(info.getServiceId())) {
                                     Endpoint endpoint = new Endpoint(endpointId, info.getEndpointName());
                                     mDiscoveredEndpoints.put(endpointId, endpoint);
                                     onEndpointDiscovered(endpoint);
@@ -524,10 +567,22 @@ public class connections_activity extends AppCompatActivity{
         logD(receivedBytes.toString());
         String question = new String(receivedBytes);
 
-        Intent myIntent = new Intent(connections_activity.this,
-                get_poll_2_activity.class);
-        myIntent.putExtra("Question", "" + question);
-        connections_activity.this.startActivity(myIntent);
+        logD(endpoint.getId());
+        logD(Boolean.toString(QUIZ));
+
+        if(!QUIZ){
+            Intent myIntent = new Intent(connections_activity.this,
+                    get_poll_2_activity.class);
+            myIntent.putExtra("Question", "" + question);
+            connections_activity.this.startActivity(myIntent);
+        }
+        else {
+            Intent myIntent = new Intent(connections_activity.this,
+                    get_quiz_activity.class);
+            myIntent.putExtra("Question", "" + question);
+            connections_activity.this.startActivity(myIntent);
+        }
+
         stopAllEndpoints();
     }
 
@@ -553,6 +608,10 @@ public class connections_activity extends AppCompatActivity{
      */
     protected String getServiceId(){
         return "com.google.android.gms.nearby.messages.samples.nearbydevices";
+    }
+
+    protected String getServiceId_quiz(){
+        return "com.google.android.gms.nearby.messages.samples.nearbydevices_quiz";
     }
 
     /**

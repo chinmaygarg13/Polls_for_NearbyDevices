@@ -60,7 +60,7 @@ import java.util.Set;
 
 import static java.lang.Character.isDigit;
 
-public class get_poll_2_activity extends AppCompatActivity {
+public class get_quiz_activity extends AppCompatActivity {
     /** Our handler to Nearby Connections. */
     private ConnectionsClient mConnectionsClient;
 
@@ -103,7 +103,7 @@ public class get_poll_2_activity extends AppCompatActivity {
 
                     Endpoint endpoint = new Endpoint(endpointId, connectionInfo.getEndpointName());
                     mPendingConnections.put(endpointId, endpoint);
-                    get_poll_2_activity.this.onConnectionInitiated(endpoint, connectionInfo);
+                    get_quiz_activity.this.onConnectionInitiated(endpoint, connectionInfo);
                 }
 
                 @Override
@@ -117,7 +117,7 @@ public class get_poll_2_activity extends AppCompatActivity {
                         logW(
                                 String.format(
                                         "Connection failed. Received status %s.",
-                                        get_poll_2_activity.toString(result.getStatus())));
+                                        get_quiz_activity.toString(result.getStatus())));
                         onConnectionFailed(mPendingConnections.remove(endpointId));
                         return;
                     }
@@ -151,18 +151,17 @@ public class get_poll_2_activity extends AppCompatActivity {
                 }
             };
 
-    private RadioGroup mRadioGroup;
-    private RadioButton mRadioButton;
     private FloatingActionButton mButton;
     private FloatingActionButton mButton2;
 
-    private String mPubMessage;
+    private String mPubMessage = getName() + "\n";
+    private int height = 100;
 
     /** Called when our Activity is first created. */
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.get_poll);
+        setContentView(R.layout.get_quiz);
 
         //To hide the soft keyboard upon getting into this activity, as it has an EditText
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
@@ -170,25 +169,26 @@ public class get_poll_2_activity extends AppCompatActivity {
         Intent intent = getIntent();
 
         String question = intent.getStringExtra("Question");
+        final String[] qa_array = question.split("\\$\\$");
 
-        String[] qa_array = question.split("\\$\\$");
-        question = qa_array[0];
+        mButton = findViewById(R.id.submit_button_quiz);
+        LinearLayout mLayout = findViewById(R.id.get_quiz_linear);
+        TextView q1 = findViewById(R.id.q1);
+        final EditText a1 = findViewById(R.id.a1);
 
-
-        mButton = findViewById(R.id.submit_button);
-        mButton2 = findViewById(R.id.submit_button2);
-        TextView mText = findViewById(R.id.text_q);
-        mRadioGroup = findViewById(R.id.radio_group);
-
-        mText.setText(question);
+        q1.setText(qa_array[0]);
 
         for(int i = 1; i < qa_array.length; i++){
-            RadioButton rbtn = new RadioButton(this);
-            rbtn.setId(View.generateViewId());
-            rbtn.setText(qa_array[i]);
-            RadioGroup.LayoutParams params = new RadioGroup.LayoutParams(RadioGroup.LayoutParams.WRAP_CONTENT,
-                    RadioGroup.LayoutParams.WRAP_CONTENT);
-            mRadioGroup.addView(rbtn, params);
+            TextView mText = new TextView(this);
+            mText.setId(View.generateViewId());
+            mText.setText(qa_array[i]);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            mLayout.addView(mText, params);
+
+            EditText mEdit = new EditText(this);
+            mEdit.setId(i + 1000);
+            mLayout.addView(mEdit, params);
         }
 
         mButton.setOnClickListener(
@@ -196,42 +196,19 @@ public class get_poll_2_activity extends AppCompatActivity {
                 {
                     public void onClick(View view)
                     {
-                        int selectId = mRadioGroup.getCheckedRadioButtonId();
-                        if(selectId == -1){
-                            logAndShowSnackbar("Please select an option before publishing.");
+                        mPubMessage += "1. " + a1.getText().toString() + "\n";
+                        height += a1.getHeight();
+                        for(int i = 1; i < qa_array.length; i++){
+                            EditText ed = findViewById(i + 1000);
+                            mPubMessage += Integer.toString(i + 1)+ ". " + ed.getText().toString() + "\n";
+                            height += ed.getHeight();
                         }
-                        else{
-                            mRadioButton = findViewById(selectId);
-                            mPubMessage = mRadioButton.getText().toString();
-                            int h = mRadioButton.getHeight();
-                            mPubMessage = Integer.toString(h) + "$$$" + mPubMessage;
-                            Log.v("_log", mPubMessage);
+                        mPubMessage = Integer.toString(height) + "$$$" + mPubMessage;
+                        Log.v("_log", mPubMessage);
 
-                            startAdvertising();
-                        }
+                        startAdvertising();
                     }
                 });
-
-        mButton2.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        int selectId = mRadioGroup.getCheckedRadioButtonId();
-                        if(selectId == -1){
-                            logAndShowSnackbar("Please select an option before publishing.");
-                        }
-                        else{
-                            mRadioButton = findViewById(selectId);
-                            mPubMessage = mRadioButton.getText().toString();
-                            int h = mRadioButton.getHeight();
-                            mPubMessage = Integer.toString(h) + "$$$" + mPubMessage;
-                            Log.v("_log", mPubMessage);
-
-                            send();
-                        }
-                    }
-                }
-        );
 
 
         mConnectionsClient = Nearby.getConnectionsClient(this);
@@ -309,7 +286,6 @@ public class get_poll_2_activity extends AppCompatActivity {
      */
     protected void onConnectionInitiated(Endpoint endpoint, ConnectionInfo connectionInfo) {
         acceptConnection(endpoint);
-        //send();
     }
 
     /** Accepts a connection request. */
@@ -425,7 +401,6 @@ public class get_poll_2_activity extends AppCompatActivity {
                                 }
                             });
             mButton.hide();
-            mButton2.show();
         }
     }
 
@@ -487,7 +462,7 @@ public class get_poll_2_activity extends AppCompatActivity {
      * we'll verify that the advertiser has the same service id before we consider connecting to them.
      */
     protected String getServiceId(){
-        return "com.google.android.gms.nearby.messages.samples.nearbydevices";
+        return "com.google.android.gms.nearby.messages.samples.nearbydevices_quiz";
     }
 
     /**
@@ -556,7 +531,7 @@ public class get_poll_2_activity extends AppCompatActivity {
 
     private void logAndShowSnackbar(final String text) {
         Log.w("_log", text);
-        View container = findViewById(R.id.start_poll_container);
+        View container = findViewById(R.id.get_quiz_container);
         if (container != null) {
             Snackbar.make(container, text, Snackbar.LENGTH_LONG).show();
         }

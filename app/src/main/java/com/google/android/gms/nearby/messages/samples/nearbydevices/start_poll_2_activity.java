@@ -1,10 +1,6 @@
 package com.google.android.gms.nearby.messages.samples.nearbydevices;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
@@ -12,8 +8,6 @@ import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -26,7 +20,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.nearby.Nearby;
@@ -49,11 +42,9 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 import static java.lang.Character.isDigit;
 
@@ -66,7 +57,7 @@ public class start_poll_2_activity extends AppCompatActivity {
 
     /**
      * The devices we have pending connections to. They will stay pending until we call {@link
-     * #acceptConnection(Endpoint)} or {@link #rejectConnection(Endpoint)}.
+     * #acceptConnection(Endpoint)} or {link #rejectConnection(Endpoint)}.
      */
     private final Map<String, Endpoint> mPendingConnections = new HashMap<>();
 
@@ -182,7 +173,7 @@ public class start_poll_2_activity extends AppCompatActivity {
     private ArrayAdapter mAnswersArrayAdapter;
 
     public int num = 2;     /**Default number of options*/
-    private int height = 30;
+    private int height = 30;    //in pixels
     private String mPubMessage;
 
     /** Called when our Activity is first created. */
@@ -247,6 +238,7 @@ public class start_poll_2_activity extends AppCompatActivity {
                     public void onClick(View view)
                     {
                         stopDiscovering();
+                        stopAllEndpoints();
                         view.setVisibility(View.INVISIBLE);
                         logAndShowSnackbar("Subscription off. Please see the result.");
                     }
@@ -375,7 +367,7 @@ public class start_poll_2_activity extends AppCompatActivity {
      * Called when a pending connection with a remote endpoint is created. Use {@link ConnectionInfo}
      * for metadata about the connection (like incoming vs outgoing, or the authentication token). If
      * we want to continue with the connection, call {@link #acceptConnection(Endpoint)}. Otherwise,
-     * call {@link #rejectConnection(Endpoint)}.
+     * call {link #rejectConnection(Endpoint)}.
      */
     protected void onConnectionInitiated(Endpoint endpoint, ConnectionInfo connectionInfo) {
         acceptConnection(endpoint);
@@ -392,19 +384,6 @@ public class start_poll_2_activity extends AppCompatActivity {
                             @Override
                             public void onFailure(@NonNull Exception e) {
                                 logW("acceptConnection() failed.", e);
-                            }
-                        });
-    }
-
-    /** Rejects a connection request. */
-    protected void rejectConnection(Endpoint endpoint) {
-        mConnectionsClient
-                .rejectConnection(endpoint.getId())
-                .addOnFailureListener(
-                        new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                logW("rejectConnection() failed.", e);
                             }
                         });
     }
@@ -496,12 +475,6 @@ public class start_poll_2_activity extends AppCompatActivity {
         connectToEndpoint(endpoint);
     }
 
-    /** Disconnects from the given endpoint. */
-    protected void disconnect(Endpoint endpoint) {
-        mConnectionsClient.disconnectFromEndpoint(endpoint.getId());
-        mEstablishedConnections.remove(endpoint.getId());
-    }
-
     /** Disconnects from all currently connected endpoints. */
     protected void disconnectFromAllEndpoints() {
         for (Endpoint endpoint : mEstablishedConnections.values()) {
@@ -545,11 +518,6 @@ public class start_poll_2_activity extends AppCompatActivity {
                         });
     }
 
-    /** Returns {@code true} if we're currently attempting to connect to another device. */
-    protected final boolean isConnecting() {
-        return mIsConnecting;
-    }
-
     private void connectedToEndpoint(Endpoint endpoint) {
         logD(String.format("connectedToEndpoint(endpoint=%s)", endpoint));
         mEstablishedConnections.put(endpoint.getId(), endpoint);
@@ -574,43 +542,31 @@ public class start_poll_2_activity extends AppCompatActivity {
     /** Called when someone has connected to us. Override this method to act on the event. */
     protected void onEndpointConnected(Endpoint endpoint) {
         if(isAdvertising()){
-            //send();
-            mConnectionsClient
-                    .sendPayload(endpoint.getId(), Payload.fromBytes(mPubMessage.getBytes()))
-                    .addOnFailureListener(
-                            new OnFailureListener() {
-                                @Override
-                                public void onFailure(@NonNull Exception e) {
-                                    logW("sendPayload() failed.", e);
-                                }
-                            });
+            send(endpoint);
         }
     }
 
     /** Called when someone has disconnected. Override this method to act on the event. */
     protected void onEndpointDisconnected(Endpoint endpoint) {}
 
-    /** Returns a list of currently discovered endpoints. */
-    protected Set<Endpoint> getDiscoveredEndpoints() {
-        return new HashSet<>(mDiscoveredEndpoints.values());
-    }
-
-    /** Returns a list of currently connected endpoints. */
-    protected Set<Endpoint> getConnectedEndpoints() {
-        return new HashSet<>(mEstablishedConnections.values());
-    }
-
     /**
      * Sends a {@link Payload} to all currently connected endpoints.
      *
      * param payload The data you want to send.
      */
-//    protected void send() {
-//        //can add a parameter String endpointId and return send(endpointId) ->
-//        //mConnectionsClient.sendPayload(endpointId, payload);
-//        send(mEstablishedConnections.keySet());
-//    }
-//
+    protected void send(Endpoint endpoint) {
+            //send(mEstablishedConnections.keySet());
+            mConnectionsClient
+                    .sendPayload(endpoint.getId(), Payload.fromBytes(mPubMessage.getBytes()))
+                    .addOnFailureListener(
+                            new OnFailureListener() {
+        @Override
+        public void onFailure(@NonNull Exception e) {
+            logW("sendPayload() failed.", e);
+        }
+    });
+    }
+
 //    private void send(Set<String> endpoints) {
 //        mConnectionsClient
 //                .sendPayload(new ArrayList<>(endpoints), Payload.fromBytes(mPubMessage.getBytes()))
@@ -632,9 +588,11 @@ public class start_poll_2_activity extends AppCompatActivity {
     protected void onReceive(Endpoint endpoint, Payload payload) {
         // Called when a new message is found.
         //TODO: Add Roll number or name of the sender
-        mAnswersArrayAdapter.add(new String(payload.asBytes()));
+        String reply = new String(payload.asBytes());
+        String[] s_array = reply.split("\\$\\$\\$");
+        mAnswersArrayAdapter.add(s_array[1]);
         mAnswersArrayAdapter.sort(ALPHABETICAL_ORDER1);
-        height += 130;
+        height += Integer.parseInt(s_array[0]);
         ConstraintLayout.LayoutParams mParam = new ConstraintLayout.LayoutParams(
                 ConstraintLayout.LayoutParams.MATCH_PARENT, height);
         answersListView.setLayoutParams(mParam);
@@ -677,20 +635,6 @@ public class start_poll_2_activity extends AppCompatActivity {
                 status.getStatusMessage() != null
                         ? status.getStatusMessage()
                         : ConnectionsStatusCodes.getStatusCodeString(status.getStatusCode()));
-    }
-
-    /**
-     * Returns {@code true} if the app was granted all the permissions. Otherwise, returns {@code
-     * false}.
-     */
-    public static boolean hasPermissions(Context context, String... permissions) {
-        for (String permission : permissions) {
-            if (ContextCompat.checkSelfPermission(context, permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @CallSuper

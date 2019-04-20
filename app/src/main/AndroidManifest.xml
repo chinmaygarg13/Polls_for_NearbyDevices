@@ -46,6 +46,16 @@
             android:label="Nearby Polls"
             android:name=".get_poll_2_activity"
             android:windowSoftInputMode="adjustResize"/>
+
+        <activity
+            android:label="Nearby Polls"
+            android:name=".start_quiz_activity"
+            android:windowSoftInputMode="adjustResize"/>
+
+        <activity
+            android:label="Nearby Polls"
+            android:name=".get_quiz_activity"
+            android:windowSoftInputMode="adjustResize"/>
     </application>
 
 </manifest>
