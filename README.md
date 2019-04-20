@@ -3,11 +3,11 @@
 Introduction
 ------------
 
-This app allows a user to publish a poll to nearby devices, and subscribe
-to answers published by those devices(which are publishing the answers after
-subscribing to the poll).
+This app allows a user to publish a **poll** to nearby devices, and subscribe to answers published by those devices(which are publishing the answers after subscribing to the poll).
 
 To run this sample, use two or more devices to publish and subscribe polls.
+
+**QUIZ** mode was also added as an update!!!!
 
 
 Getting Started
@@ -15,7 +15,7 @@ Getting Started
 
 This project was developed in 2 parts:
 
-- 1st part was developed using Nearby Connections API of older version and requires internet connection. This part is now redundant and not required. So can be deleted.
+- 1st part was developed using Nearby Connections API of older version and requires internet connection. This part is now **redundant** and not required. So **can be deleted**. I have just left it so that you can observe the differences, if you wish.
 This part includes:
     * `first_page_activity.java`
     * `start_poll_activity.java`
@@ -30,12 +30,20 @@ This part includes:
   5. Pick the `Android key`. Then register your Android app's SHA1 certificate fingerprint and package name for your app.
   6. Copy the API key generated, and paste it in `AndroidManifest.xml`.
 
-- 2nd part was developed using the latest version of the API, and does not require any internet connectivity and also has additional features.
+- 2nd part was developed using the **latest version** of the API, and does not require any internet connectivity and also has additional features.
 This part includes:
     * `connections_activity.java`
     * `start_poll_2_activity.java`
     * `get_poll_2_activity.java`
     * `Endpoint.java`
+    
+- It also has a QUIZ mode, which works on the latest version of the API. This part include:
+   * `connections_activity.java`
+   * `start_quiz_activity.java`
+   * `get_quiz_activity.java`
+   * `DeviceMessage.java`
+
+For Quiz mode we are using a different Service ID from that of Poll mode, so that when subscribing for Poll we don't recieve a Quiz, by mistake and vice-versa. Also Quiz mode has different .xml files from Poll mode. It was made as an update to the project, after the Poll mode was completely finished. It may have some (scarcely any, if any) bugs as it was not properly tested.
 
 
 To Be Noted
@@ -58,5 +66,6 @@ I have used `disconnectFromAllEndpoints()` function in `start_poll_2_activity`, 
 Future Work
 -----------
 
-At present, you can only send one question at a time and also only MCQ type questions. I plan to add a QUIZ mode, where you can send multiple questions with `EditText` type of answers.
+* At present, you can only send the MCQ type questions in the poll mode, and, EditText type questions in the quiz mode.
+* You cannot download the responses for future reference.
 
