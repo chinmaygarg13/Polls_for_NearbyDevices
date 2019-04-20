@@ -17,7 +17,7 @@ This project was developed in 2 parts:
 
 - 1st part was developed using Nearby Connections API of older version and requires internet connection. This part is now **redundant** and not required. So **can be deleted**. I have just left it so that you can observe the differences, if you wish.
 This part includes:
-    * `first_page_activity.java`
+    * `first_page_activity.java` <- MainActivity
     * `start_poll_activity.java`
     * `get_poll_activity.java`
     * `DeviceMessage.java`
@@ -32,7 +32,7 @@ This part includes:
 
 - 2nd part was developed using the **latest version** of the API, and does not require any internet connectivity and also has additional features.
 This part includes:
-    * `connections_activity.java`
+    * `connections_activity.java` <- MainActivity
     * `start_poll_2_activity.java`
     * `get_poll_2_activity.java`
     * `Endpoint.java`
