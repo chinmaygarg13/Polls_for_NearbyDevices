@@ -68,4 +68,4 @@ Future Work
 
 * At present, you can only send the MCQ type questions in the poll mode, and, EditText type questions in the quiz mode.
 * You cannot download the responses for future reference.
-
+* While making this project I did not know that the connections established by the Nearby API are full-duplex. So, what I did was, I first established P2P_STAR connection, with the Advertiser in the centre and sent the Poll/Quiz to the Discoverers. Then, I disconnected everyone to establish P2P_CLUSTER connections. Which was not needed at all, as using the same earlier connections, I could have the replies back to the asker. But, now it takes extra time for disconnecting, discovering and establishing new connections. A total waste of time.
